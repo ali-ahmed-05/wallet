@@ -16,12 +16,12 @@ async function main() {
 
     // We get the contract to deploy
 
-    const Nft = await ethers.getContractFactory("NFT");
-    const nft = await Nft.deploy();
+    Wallet = await ethers.getContractFactory("Wallet");
+    wallet = await Wallet.deploy();
+    await wallet.deployed();
 
-    await nft.deployed();
 
-    console.log("Nft deployed to:", nft.address);
+    console.log("Nft deployed to:", wallet.address);
 
 }
 

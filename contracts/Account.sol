@@ -67,7 +67,7 @@ contract Account is OwnableV1 , ERC1155Holder , ERC721Holder{
 
     function transferETH(address payable to , uint256 amount)public onlyOwner{
         require(amount <= address(this).balance,"ETH amount exceeds");
-        to.transfer(amount);
+        to.transfer(amount); // transfer -> call
     }
     // ERC721 implementation
 

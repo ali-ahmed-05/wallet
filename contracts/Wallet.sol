@@ -11,7 +11,7 @@ import "./Account.sol";
 contract Wallet is Admin{
 
     using Counters for Counters.Counter;
-    Counters.Counter private _itemIds;
+    Counters.Counter private _accounts;
 
     constructor() Admin(){
 
@@ -27,8 +27,8 @@ contract Wallet is Admin{
     address payable owner;
 
   }
-    
-
+    address[] private Accounts;
+    mapping(uint256 => address) public idToAccount;
     mapping(address => address) public userAccount;
     mapping(uint256 => WalletItem) private idToWalletItem;
     mapping(address=> mapping(uint256=>bool)) public NFTexist;
@@ -39,7 +39,12 @@ contract Wallet is Admin{
 
     function createAccount(address vault_) public returns(address) {
       Account account = new Account(admin_contract_addr(),_msgSender(),vault_);
+      Accounts.push(address(account));
       userAccount[_msgSender()]=address(account);
       return address(account);
+    }
+
+    function getUserAccounts()public view returns(address[] memory){
+      return Accounts;
     }
 }

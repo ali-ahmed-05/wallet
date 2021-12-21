@@ -58,6 +58,20 @@ describe("Wallet", function () {
         console.log("Wallet : ",wallet.address)
  
    });
+   it("Create Account", async function () {
+
+    Tx = await wallet.connect(person2).createAccount(rentVault.address);
+    Tx.wait()
+    let user = await wallet.userAccount(person2.address)
+    account =await Account.attach(user)
+    let owner = await account.owner()
+    expect(person2.address).to.equal(owner)
+     console.log("new account : ",user)
+     console.log("account owner : ",owner)
+     console.log("Account creator : ",person2.address)
+     console.log("Wallet : ",wallet.address)
+
+});
 
 it("Run function only owner", async function () {
 
@@ -129,16 +143,24 @@ it("play with rented NFT", async function () {
     Tx.wait()
 });
 it("play with rented NFT after 8 sec", async function () {    
-    await new Promise(resolve => setTimeout(resolve, 8000)); // 3 sec
+   // await new Promise(resolve => setTimeout(resolve, 8000)); // 3 sec
     Tx = await rentVault.play(1);
-   Tx.wait()
+    Tx.wait()
 });
-it("get rented NFT back", async function () {    
-  //  await new Promise(resolve => setTimeout(resolve, 8000)); // 3 sec
+// it("get rented NFT back", async function () {    
+//   //  await new Promise(resolve => setTimeout(resolve, 8000)); // 3 sec
   
-     Tx = await account.connect(person1).RemoveItemFromVault(1);
-     Tx.wait()
-});
+//      Tx = await account.connect(person1).RemoveItemFromVault(1);
+//      Tx.wait()
+// });
+
+it("get rented NFT back", async function () {    
+    //  await new Promise(resolve => setTimeout(resolve, 8000)); // 3 sec
+    //  Tx = await nft["safeTransferFrom(address,address,uint256)"](_.address, user, 1);
+       Tx = await wallet.getUserAccounts();
+       console.log(Tx[0])
+       console.log(Tx[1])
+  });
 
 
 

@@ -9,6 +9,8 @@ describe("Wallet", function () {
     let wallet;
     let Account;
     let account
+    let RentVault;
+    let rentVault;
 
 
 
@@ -24,7 +26,11 @@ describe("Wallet", function () {
 
          NFT = await ethers.getContractFactory("NFT");
          nft = await NFT.deploy(wallet.address);
-        await nft.deployed();  
+        await nft.deployed();
+
+        RentVault = await ethers.getContractFactory("RentVault");
+        rentVault = await RentVault.deploy();
+       await rentVault.deployed();  
 
         Account = await ethers.getContractFactory("Account");
 
@@ -40,7 +46,7 @@ describe("Wallet", function () {
     });
     it("Create Account", async function () {
 
-       Tx = await wallet.connect(person1).createAccount();
+       Tx = await wallet.connect(person1).createAccount(rentVault.address);
        Tx.wait()
        let user = await wallet.userAccount(person1.address)
        account =await Account.attach(user)
@@ -77,35 +83,65 @@ it("Run function only owner", async function () {
 
    it("transfer NFT to new account", async function () {
     let user = await wallet.userAccount(person1.address)
-    Tx = await nft.transferFrom(
-        _.address,
-        user,
-        1)
+    Tx = await nft["safeTransferFrom(address,address,uint256)"](_.address, user, 1);
+        
     Tx.wait()
     let balance =await nft.balanceOf(user);
         balance = await ethers.BigNumber.from(balance).toString()
         expect(balance).to.equal('1');
 //       Tx.wait()
 });
-it("transfer NFT back to orignal owner", async function () {
+// it("transfer NFT back to orignal owner", async function () {
+//     let user = await wallet.userAccount(person1.address)
+//     account =await Account.attach(user)
+//     Tx = await account.connect(person1).transferFrom(_.address,nft.address,1)
+//     Tx.wait()
+//     let balance =await nft.balanceOf(_.address);
+//         balance = await ethers.BigNumber.from(balance).toString()
+//         expect(balance).to.equal('1');
+// //       Tx.wait()
+// });
+it("transfer NFT to Vault", async function () {
+    
     let user = await wallet.userAccount(person1.address)
     account =await Account.attach(user)
-    Tx = await account.connect(person1).transferFrom(_.address,nft.address,1)
+    Tx = await account.connect(person1).rentNFT(
+        nft.address,
+        1,
+        10,
+        10
+      )
     Tx.wait()
-    let balance =await nft.balanceOf(_.address);
+        let balance =await nft.balanceOf(user);
         balance = await ethers.BigNumber.from(balance).toString()
-        expect(balance).to.equal('1');
+        expect(balance).to.equal('0');
 //       Tx.wait()
 });
-// it("Create another NFT", async function () {    
-//     Tx = await nft.createToken("asd");
-//    Tx.wait()
 
-//    let balance =await nft.balanceOf(_.address);
-//    balance = await ethers.BigNumber.from(balance).toString()
-//    expect(balance).to.equal('1');
+it("Create Rent", async function () {    
+    let _value = await rentVault.getPrice('1');
+     Tx = await rentVault.connect(_).createMarketRent(1,{value:_value});
+    Tx.wait()
+});
+it("play with rented NFT", async function () {    
+    
+     Tx = await rentVault.play(1);
+    Tx.wait()
+});
+it("play with rented NFT after 8 sec", async function () {    
+    await new Promise(resolve => setTimeout(resolve, 8000)); // 3 sec
+    Tx = await rentVault.play(1);
+   Tx.wait()
+});
+it("get rented NFT back", async function () {    
+  //  await new Promise(resolve => setTimeout(resolve, 8000)); // 3 sec
+  
+     Tx = await account.connect(person1).RemoveItemFromVault(1);
+     Tx.wait()
+});
 
-// });
+
+
 // it("transfer Paused", async function () {
 //     Tx = await wallet.pause();
 //     Tx.wait()

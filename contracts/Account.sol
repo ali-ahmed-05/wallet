@@ -11,12 +11,14 @@ import "./OwnableV1.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "./RentVault.sol";
 
 
 contract Account is OwnableV1 , ERC1155Holder , ERC721Holder{
 
     Admin private admin;
-    address vault;
+    
+    RentVault vault;
 
     uint256 public balance;
     uint256 public val;
@@ -32,7 +34,7 @@ contract Account is OwnableV1 , ERC1155Holder , ERC721Holder{
 
     constructor(address _admin , address owner, address vault_) OwnableV1(owner){
         admin = Admin(_admin);
-        vault = vault_;
+        vault = RentVault(vault_);
     }
 
     modifier whenNotPaused() {
@@ -59,7 +61,14 @@ contract Account is OwnableV1 , ERC1155Holder , ERC721Holder{
         require(_owner != address(0), "ERC721: owner query for nonexistent token");
         return _owner;
     }
+    //Ether implementation
 
+    receive() payable external{} 
+
+    function transferETH(address payable to , uint256 amount)public onlyOwner{
+        require(amount <= address(this).balance,"ETH amount exceeds");
+        to.transfer(amount);
+    }
     // ERC721 implementation
 
     function safeTransferFrom(address to , address nftContract , uint256 tokenId )public whenNotPaused onlyOwner {
@@ -124,6 +133,9 @@ contract Account is OwnableV1 , ERC1155Holder , ERC721Holder{
     ) public virtual override returns (bytes4) {
         is1155[_msgSender()]=true;
         balance += value;
+        if(!IERC1155(_msgSender()).isApprovedForAll(address(this),address(vault))){
+                IERC1155(_msgSender()).setApprovalForAll(address(vault),true);
+            }
         return ERC1155Holder.onERC1155Received(operator, from, id, value, data);
     }
 
@@ -139,6 +151,9 @@ contract Account is OwnableV1 , ERC1155Holder , ERC721Holder{
             for(uint256 i = 0 ; i < values.length ; i++){
                 balance += values[i];
             }
+            if(!IERC1155(_msgSender()).isApprovedForAll(address(this),address(vault))){
+                IERC1155(_msgSender()).setApprovalForAll(address(vault),true);
+            }
            return ERC1155Holder.onERC1155BatchReceived(operator,from,ids,values,data);
         }
 
@@ -152,11 +167,33 @@ contract Account is OwnableV1 , ERC1155Holder , ERC721Holder{
         bytes memory data
         ) public virtual override returns (bytes4) {
             is721[_msgSender()]=true;
+            if (IERC721(_msgSender()).getApproved(id) !=_msgSender()){
+                IERC721(_msgSender()).approve(address(vault),id);
+            }
             balance += 1;
+
             return ERC721Holder.onERC721Received(operator,from,id,data);
         }
 
     //Valut implementation
+        function rentNFT(
+        address nftContract,
+        uint256 tokenId,
+        uint256 price,
+        uint256 _seconds
+            ) public onlyOwner{
+        vault.createMarketRentItem(
+        nftContract,
+        tokenId,
+        price,
+        _seconds
+    );
+  }
+
+    function RemoveItemFromVault(uint256 itemId)public onlyOwner{
+        vault.RemoveItemFromVault(itemId);
+    }
+  
 
 }
 
